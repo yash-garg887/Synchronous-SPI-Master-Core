@@ -9,7 +9,7 @@
 
 ##module paramters:
     * p_clk_divider (default = 4): System clock division factor (freq_sclk = freq_clk / p_clk_divider)
-												 Must be an even integer >= 2 
+												 
 
 ##module ports:
    * i_clk : (input , 1 bit) Fast system clock
