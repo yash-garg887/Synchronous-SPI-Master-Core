@@ -5,7 +5,7 @@ module spi_master #(
     input wire        i_clk ,    //system clock
     input wire        i_rst_n,   //asynchronous active low reset
     input wire  [7:0] i_tx_data, //Parallel byte to be transmitted
-    output reg  [7:0] o_rx_data, //data reached from miso terminal
+    output reg  [7:0] o_rx_data, //data recieved from miso terminal
     input wire        i_start,   //Command pulse from CPU to begin transmission
     output reg        o_ready,   //When machine is in IDLE state then it is 1 , when TRANSFER it is 0
     
@@ -29,7 +29,7 @@ module spi_master #(
     //internal clock edge detectors
     wire w_clk_tick,
          w_rising_edge_tick,
-         w_falling_edge_tick;
+         w_falling_edge_tick; //these corresponds to sclk
 
     //every time input clock completes internal clock's half period threshold , internal clock ticks
     assign w_clk_tick = (r_clk_cnt == (p_clk_divider/2) - 1) ;     	//all edges of o_sclk
@@ -47,7 +47,7 @@ module spi_master #(
             r_tx_reg <= 8'b0;
             r_rx_reg <= 8'b0;
             o_mosi <= 1'b0;
-            o_ready <= 1'b1;
+            o_ready <= 1'b1; //signal to cpu that i am free to communicate
             o_cs_n <= 1'b1;
         end
 
@@ -59,7 +59,7 @@ module spi_master #(
 
                     if(i_start == 1'b1) begin
                         r_state <= TRANSFER;
-                        o_cs_n <= 1'b0;
+                        o_cs_n <= 1'b0;        //now the slave is ready to communicate
                         o_ready <= 1'b0;
                         r_tx_reg <= i_tx_data; //load the data which is to be transmitted
                         o_mosi <= i_tx_data[7]; //drive msb of data to be transmitted on MOSI line
@@ -72,7 +72,7 @@ module spi_master #(
                         o_cs_n <= 1'b1;
                         o_ready <= 1'b1;
                         r_state <= IDLE;
-                        o_rx_data <= r_rx_reg; //offload sampled data to output port
+                        o_rx_data <= r_rx_reg; //offload sampled data to output port towards cpu
                     end
 
                     else if(w_falling_edge_tick) begin
@@ -95,7 +95,7 @@ module spi_master #(
     always @(posedge i_clk , negedge i_rst_n) begin
         if(~i_rst_n) begin
             r_clk_cnt <= 4'b0;
-            o_sclk <= 1'b0;
+            o_sclk <= 1'b0;    //low when idle
         end
 
         else if(r_state == TRANSFER) begin
@@ -122,7 +122,7 @@ module spi_master #(
     
     always @(posedge i_clk , negedge i_rst_n ) begin 
         if(~i_rst_n) begin 
-            r_bit_cnt <= 3'b0;
+            r_bit_cnt <= 3'b0 ;
         end
 
         else if (r_state == IDLE) begin
